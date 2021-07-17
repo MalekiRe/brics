@@ -1,0 +1,2 @@
+pigpio==1.44
+piServoCtl==1.1.0

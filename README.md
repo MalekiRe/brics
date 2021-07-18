@@ -1,87 +1,20 @@
 # brics
 mars-iss-bricks repo for SPOCS
 
-## DO NOT MAKE A COMMIT WITHOUT GETTING A PULL REQUEST APPROVED BY AN ADMIN ##
-
-All devlopment work should take place in the "dev" branch or another development branch. Code that should be moved into "master" should only be moved there through a pull request. Setup instructions are below.
+This branch is used for testing a single servo connected to a Raspberry Pi.
 
 Contact _lglik_ if you have any questions!
 
-## RPI dev setup Instructions 
+## Setup Instructions
 
-In a Terminal window on the Raspberry Pi:
+cd to your _brics_ directory where requirements.txt is located.
 
-```sudo apt-get update```
+activate your virtualenv if you have one.
 
-```sudo apt-get upgrade```
+run ```pip install -r requirements.txt``` in your shell.
 
-```cd /```
+## Running the script
 
-```sudo mkdir Code```
+run ```python TestSingleServo.py``` in your shell to run the program with the default servo gpio port set to 12.
 
-```cd Code```
-
-```sudo git clone https://github.com/stanford-ssi/brics.git```
-
-Enter your GitHub username and password when prompted.
-
-```cd brics```
-
-```git config --local user.name "Firstname Lastname"```
-
-```git config --local user.email "username@myEmail.com"```
-
-```git checkout dev```
-
-## RPI flight setup Instructions
-
-In a Terminal window on the Raspberry Pi:
-
-```sudo apt-get update```
-
-```sudo apt-get upgrade```
-
-```cd /```
-
-```sudo mkdir Code```
-
-```cd Code```
-
-```sudo git clone https://github.com/stanford-ssi/brics.git```
-
-Enter your GitHub username and password when prompted.
-
-```cd /```
-
-```sudo nano /etc/rc.local```
-
-Edit /etc/rc.local to match the following:
-
-```
-#!/bin/sh -e
-# 
-# rc.local
-#
-# This script is executed at the end of each multiuser runlevel.
-# Make sure that the script will "exit 0" on success or any other
-# value on error.
-#
-# In order to enable or disable this script just change the execution
-# bits.
-#
-# By default this script does nothing.
-# Print the IP address
-
-_IP=$(hostname -I) || true
-if [ "$_IP" ]; then
-  printf "My IP address is %s\n" "$_IP"
-fi
-
-sudo python /Code/brics/main.py &
-
-exit 0
-```
-
-```Cntl-X``` to save
-
-```sudo shutdown```
+Or, run ```python TestSingleServo.py port``` where ```port``` is the gpio port number the servo is connected to.

@@ -5,18 +5,18 @@ Written by Leo Glikbarg
 """
 from piservo import Servo
 import time
+import sys
 
-GPIO_PORT_NUM = 12
 
-def run():
-    """"opens or closes a servo repeastedly as directed through user prompts"""
-    single_servo = Servo(GPIO_PORT_NUM)
+def run(gpio_port=12):
+    """opens or closes a servo repeastedly as directed through user prompts"""
+    single_servo = Servo(gpio_port)
     stop = False
     while not stop:
         choice = prompt()
-        if choice == 'stop':
+        if choice == "stop":
             stop = True
-        elif choice == 'open':
+        elif choice == "open":
             print("\nopening the servo")
             single_servo.write(180)
             # give the servo time to actuate
@@ -29,10 +29,16 @@ def run():
 
 
 def prompt():
-    """"ask the user what they would like to do, and return their response"""
-    print("\nWould you like to \'open\' or \'close\' the servo?\nType \'stop\' to end the program.\n")
+    """ask the user what they would like to do, and return their response"""
+    print(
+        "\nWould you like to 'open' or 'close' the servo?\nType 'stop' to end the program.\n"
+    )
     return raw_input("")
+
 
 if __name__ == "__main__":
     """starts the run() method. Read the run() docstring for more information"""
-    run()
+    if len(sys.argv) > 1:
+        run(sys.argv[1])
+    else:
+        run()

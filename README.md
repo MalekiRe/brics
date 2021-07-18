@@ -8,7 +8,9 @@ Contact _lglik_ if you have any questions!
 ## Setup Instructions
 
 cd to your _brics_ directory where requirements.txt is located.
+
 activate your virtualenv if you have one.
+
 run ```pip install -r requirements.txt``` in your shell.
 
 ## Running the script

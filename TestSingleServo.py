@@ -3,14 +3,18 @@ A small script that uses the piservo library to actuate a single servo
 Stanford Student Space Initiative - Biopolymer Research for In-situ Construction
 Written by Leo Glikbarg
 """
-from piservo import Servo
+import RPi.GPIO as GPIO
 import time
 import sys
 
 
 def run(gpio_port=12):
     """opens or closes a servo repeastedly as directed through user prompts"""
-    single_servo = Servo(gpio_port)
+    servoPIN = gpio_port
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(servoPIN, GPIO.OUT)
+    servo = GPIO.PWM(servoPIN, 50)
+    servo.start(0)
     stop = False
     while not stop:
         choice = prompt()
@@ -18,12 +22,12 @@ def run(gpio_port=12):
             stop = True
         elif choice == "open":
             print("\nopening the servo")
-            single_servo.write(180)
+            servo.ChangeDutyCycle(100.0)
             # give the servo time to actuate
             time.sleep(1)
         else:
             print("\nclosing the servo")
-            single_servo.write(0)
+            servo.ChangeDutyCycle(0.0)
             # give the servo time to actuate
             time.sleep(1)
 

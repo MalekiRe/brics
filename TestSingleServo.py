@@ -10,7 +10,7 @@ import sys
 
 def run(gpio_port=12):
     """opens or closes a servo repeastedly as directed through user prompts"""
-    servoPIN = gpio_port
+    servoPIN = int(gpio_port)
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(servoPIN, GPIO.OUT)
     servo = GPIO.PWM(servoPIN, 50)

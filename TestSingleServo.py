@@ -22,14 +22,18 @@ def run(gpio_port=12):
             stop = True
         elif choice == "open":
             print("\nopening the servo")
-            servo.ChangeDutyCycle(100.0)
-            # give the servo time to actuate
-            time.sleep(1)
-        else:
-            print("\nclosing the servo")
+            servo.ChangeDutyCycle(9.5)
+            time.sleep(2)
             servo.ChangeDutyCycle(0.0)
             # give the servo time to actuate
-            time.sleep(1)
+            time.sleep(1.5)
+        else:
+            print("\nclosing the servo")
+            servo.ChangeDutyCycle(5.0)
+            time.sleep(1.0)
+            servo.ChangeDutyCycle(0.0)
+            # give the servo time to actuate
+            time.sleep(1.5)
 
 
 def prompt():

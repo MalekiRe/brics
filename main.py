@@ -10,6 +10,7 @@ import threading
 import sys
 import os
 import RPi.GPIO as GPIO
+import bme680
 
 active = True
 servo_ports = [4, 17, 27, 22, 10, 9]
@@ -26,19 +27,15 @@ def secure_sleep(sleep_length):
         gap_time = time.time() - start
 
 
-def get_humidity(data):
+def get_humidity(sensor, data):
     """get the sensed humidty from the humidity sensor and return the value"""
-    # TODO implement
-    hum = 0
-    data.info(("humidity: {humidity}").format(humidity=hum))
-    return hum
+    hum = sensor.data.humidity
+    data.info(("humidity: {humidity} %RH").format(humidity=hum))
 
-def get_temperature(data):
+def get_temperature(sensor, data):
     """get the sensed temperature  from the temperature sensor and return the value"""
-    # TODO implement
-    temp = 0
-    data.info(("temperature: {temperature}").format(temperature=temp))
-    return temp
+    temp = sensor.data.temperature
+    data.info(("temperature: {temperature} C").format(temperature=temp))
 
 
 def open_valve(servo, status):
@@ -88,9 +85,21 @@ def log_sense(wait, status, data):
     """Log the temp and humidity sense data to a file every {wait}s"""
     status.info("sensor data collection started")
     global active
+    # configure sensor
+    try:
+        sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
+    except (RuntimeError, IOError):
+        sensor = bme680.BME680(bme680.I2C_ADDR_SECONDARY)
+    # oversampling settings that trade noise vs accuracy
+    sensor.set_humidity_oversample(bme680.OS_2X)
+    sensor.set_pressure_oversample(bme680.OS_4X)
+    sensor.set_temperature_oversample(bme680.OS_8X)
+    sensor.set_filter(bme680.FILTER_SIZE_3)
     while active:
-        humidity_reading = get_humidity(data)
-        temperature_reading = get_temperature(data)
+        # if there is new data, get it
+        if sensor.get_sensor_data():
+            get_humidity(sensor, data)
+            get_temperature(sensor, data)
         status.info(("waiting {wait_time}s before recording more sensor data").format(wait_time=wait))
         secure_sleep(wait)
     status.info("sensor data collection ended")
@@ -108,8 +117,7 @@ def configure_servos(servo_pair_num, status):
         # generate pwm channel number
         servo_channel_a = servo_ports[(pair - 1) * 2]
         servo_channel_b = servo_ports[((pair - 1) * 2) + 1]
-        # initialize gpio pins
-        status.info(("servo {name} will is using port {port}").format(name=servo_name_a, port=servo_channel_a))
+        # initialize gpio pins and servos
         GPIO.setup(servo_channel_a, GPIO.OUT)
 	servo_a = GPIO.PWM(servo_channel_a, 50)
         servo_a.start(0)
@@ -167,4 +175,4 @@ if __name__ == "__main__":
     else:
         # dev: 1hz sensor spped 15s, 10s, 20s, 12s
         # flight: 1hz sensor speed, 1 hour, 10s, 48 hours, 120 hours
-        run(1, 15, 10, 20, 12)
+        run(1, 3600, 10, 3600*48, 3600*120)

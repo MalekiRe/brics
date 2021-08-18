@@ -9,16 +9,17 @@ import logging
 import threading
 import sys
 import os
-import Adafruit_PCA9685
+import RPi.GPIO as GPIO
 
 active = True
+servo_ports = [4, 17, 18, 19, 20, 21]
 
 def secure_sleep(sleep_length):
     """A wrapper for time.sleep to make it more reliable/accurate"""
     start = time.time()
     gap_time = time.time() - start
     while (gap_time < sleep_length):
-        if gap_time < 60
+        if gap_time < 60:
             time.sleep(gap_time)
         else:
             time.sleep(10)
@@ -42,16 +43,22 @@ def get_temperature(data):
 
 def open_valve(servo, status):
     """actuate a servo to open a pinch valve"""
-    status.info(("attempting to open valve {valve_id}").format(valve_id=num))
-    servos[servo]["instance"].set_pwm(servos[servo]["channel"], 1024, 3072) # 25% duty cyle
-    status.info(("valve {valve_id} opened").format(valve_id=num))
+    status.info(("attempting to open valve {valve_id}").format(valve_id=servo))
+    servos[servo]["instance"].ChangeDutyCycle(9.5) # valve opening
+    secure_sleep(2) # wait for valve to complete movement
+    servos[servo]["instance"].ChangeDutyCycle(0.0) # stop valve movement
+    secure_sleep(1.5) # wait for valve to fully stop
+    status.info(("valve {valve_id} open").format(valve_id=servo))
 
 
 def close_valve(servo, status):
     """actuate a servo to close a pinch valve"""
-    status.info(("attempting to close valve {valve_id}").format(valve_id=num))
-    servos[servo]["instance"].set_pwm(servos[servo]["channel"], 0, 4095) # 0% duty cyle
-    status.info(("valve {valve_id} closed").format(valve_id=num))
+    status.info(("attempting to close valve {valve_id}").format(valve_id=servo))
+    servos[servo]["instance"].ChangeDutyCycle(5.0) # valve closing
+    secure_sleep(2) # wait for valve to complete movement
+    servos[servo]["instance"].ChangeDutyCycle(0.0) # stop valve movement
+    secure_sleep(1.5) # wait for valve to fully stop
+    status.info(("valve {valve_id} closed").format(valve_id=servo))
 
 
 def remove_old_log(name):
@@ -93,52 +100,64 @@ def configure_servos(servo_pair_num, status):
     """create a number of paired servo objects with specific adresses and set them to be closed"""
     global servos
     servos = {}
-    i2c_addr = 0x41
+    GPIO.setmode(GPIO.BCM)
     for pair in range(1, servo_pair_num + 1):
         # generate name
         servo_name_a = ("{num}a").format(num=pair)
         servo_name_b = ("{num}b").format(num=pair)
         # generate pwm channel number
-        servo_channel_a = (pair - 1) * 2
-        servo_channel_b = ((pair - 1) * 2) + 1
-        # initialize with i2c addr
-        servo_a = Adafruit_PCA9685.PCA9685(i2c_addr)
-        servo_b = Adafruit_PCA9685.PCA9685(i2c_addr + 1)
+        servo_channel_a = servo_ports[(pair - 1) * 2]
+        servo_channel_b = servo_ports[((pair - 1) * 2) + 1]
+        # initialize gpio pins
+        status.info(("servo {name} will is using port {port}").format(name=servo_name_a, port=servo_channel_a))
+        GPIO.setup(servo_channel_a, GPIO.OUT)
+	servo_a = GPIO.PWM(servo_channel_a, 50)
+        servo_a.start(0)
+        GPIO.setup(servo_channel_b, GPIO.OUT)
+	servo_b = GPIO.PWM(servo_channel_b, 50)
+        servo_b.start(0)
         # add to servos dict
         servos[servo_name_a] = {"channel": servo_channel_a, "instance": servo_a}
         servos[servo_name_b] = {"channel": servo_channel_b, "instance": servo_b}
         # start servos as closed
-        close_valve(servo_name_a)
-        close_valve(servo_name_b)
-        i2c_addr += 2
+        close_valve(servo_name_a, status)
+        close_valve(servo_name_b, status)
 
 
-def run(servo_pair_num, sense_report_time, test_start_time, short_gap_time, long_gap_time, test_end_time):
+def run(sense_report_time, test_start_time, short_gap_time, long_gap_time, test_end_time):
     """periodically actuate servos to open/close valves and log sensor data"""
     # setup loggers and data collection
     global active
     status = configure_logger("status", "status.log")
     data = configure_logger("data", "data.log")
     status.info("loggers configured")
-    sense_thread  = threading.Thread(target=log_sense, args=(30, status, data))
-    sense_thread.start()
-    configure_servos(servo_pair_num, status)
-    status.info("servos configured")
-    # active testing
-    status.info(("waiting {start_wait} minutes before beginning first valve movement").format(start_wait=float(test_start_time)/60.0))
-    secure_sleep(test_start_time)
-    for pair_num in range(1, servo_pair_num + 1):
-        open_valve(("{num}a").format(num=pair_num), status)
-        secure_sleep(short_gap_time)
-        status.info(("waiting {gap_time}s before moving on").format(gap_time=short_gap_time))
-        open_valve(("{num}b").format(num=pair_num), status)
-        secure_sleep(long_gap_time)
-        status.info(("waiting {48} hours before moving on").format(gap_time=float(short_gap_time)/3600.0))
-    # cleanup
-    status.info(("active testing done, data logging will continue for {end_time}hours").format(end_time=float(test_end_time)/3600.0))
-    secure_sleep(test_end_time)
-    active = False
-    sense_thread.join()
+    try:
+        sense_thread  = threading.Thread(target=log_sense, args=(sense_report_time, status, data))
+        sense_thread.start()
+        servo_pair_num = int((len(servo_ports)/2))
+        configure_servos(servo_pair_num, status)
+        status.info("servos configured")
+        # active testing
+        status.info(("waiting {start_wait} minutes before beginning first valve movement").format(start_wait=float(test_start_time)/60.0))
+        secure_sleep(test_start_time)
+        for pair_num in range(1, servo_pair_num + 1):
+            open_valve(("{num}a").format(num=pair_num), status)
+            secure_sleep(short_gap_time)
+            status.info(("waiting {gap_time}s before moving on").format(gap_time=short_gap_time))
+            open_valve(("{num}b").format(num=pair_num), status)
+            secure_sleep(long_gap_time)
+            status.info(("waiting {gap_time} hours before moving on").format(gap_time=float(short_gap_time)/3600.0))
+        # cleanup
+        status.info(("active testing done, data logging will continue for {end_time}hours").format(end_time=float(test_end_time)/3600.0))
+        secure_sleep(test_end_time)
+        active = False
+        sense_thread.join()
+        GPIO.cleanup()
+    except Exception and KeyboardInterrupt as e:
+        status.info(("ERROR: {err}").format(err=e))
+	GPIO.cleanup()
+        active=False
+	sense_thread.join()
 
 
 if __name__ == "__main__":
@@ -146,5 +165,6 @@ if __name__ == "__main__":
     if len(sys.argv) == 5:
         run(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
     else:
-        # 4 servo pairs, 1hz sensor speed, 1 hour, 10s, 48 hours, 120 hours
-        run(4, 1, 3600, 10, 3600*48, 3600*120)
+        # dev: 1hz sensor spped 15s, 10s, 20s, 12s
+        # flight: 1hz sensor speed, 1 hour, 10s, 48 hours, 120 hours
+        run(1, 15, 10, 20, 12)

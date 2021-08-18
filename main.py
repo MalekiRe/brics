@@ -12,7 +12,7 @@ import os
 import RPi.GPIO as GPIO
 
 active = True
-servo_ports = [4, 17, 18, 19, 20, 21]
+servo_ports = [4, 17, 27, 22, 10, 9]
 
 def secure_sleep(sleep_length):
     """A wrapper for time.sleep to make it more reliable/accurate"""

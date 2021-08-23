@@ -16,10 +16,11 @@ DEFAULT_SHORT_GAP = 10 # s
 DEFAULT_LONG_GAP = 3600 * 48 # s (48 hours)
 DEFAULT_VALVE_QUANTITY = 3 # valves
 DEFAULT_VALVE_PORTS = [4, 17, 27, 22, 10, 9] # GPIO hardware port numbers
+MAX_HUMIDITY_LEVEL = 70 # %RH
 
 
 class Runner:
-    def __init__(self, sense_rep=DEFAULT_SENSOR_SPEED, test_start=DEFAULT_START_WAIT, test_end=DEFAULT_END_WAIT, intra=DEFAULT_SHORT_GAP, inter=DEFAULT_LONG_GAP, valve_quantity=DEFAULT_VALVE_QUANTITY, ports=DEFAULT_VALVE_PORTS):
+    def __init__(self, sense_rep=DEFAULT_SENSOR_SPEED, test_start=DEFAULT_START_WAIT, test_end=DEFAULT_END_WAIT, intra=DEFAULT_SHORT_GAP, inter=DEFAULT_LONG_GAP, valve_quantity=DEFAULT_VALVE_QUANTITY, ports=DEFAULT_VALVE_PORTS, max_hum=MAX_HUMIDITY_LEVEL):
         """configure with default or user specified timing and hardware configuration"""
         self.sense_report_time = sense_rep
         self.test_start_time = test_start
@@ -27,6 +28,7 @@ class Runner:
         self.intra_valve_time = intra
         self.inter_valve_time = inter
         self.valve_num = valve_quantity
+        self.max_humidity = max_hum
         self.payload = Payload(sense_rep, list(ports))
         self.active = False
         self.valves_configured = False
@@ -75,6 +77,17 @@ class Runner:
         self.payload.sense_thread.join()
 
 
+    def humidity_check(self):
+        """check for humidity and wait for it to drop if it is too high"""
+        if self.payload.get_humidity() > self.max_humidity:
+            self.active = False
+            self.update_step(("waiting for humidity levels to drop. Threshold: {thresh}, Current: {curr}").format(thresh=self.max_humidity, curr=self.payload.get_humidity()))
+            while self.payload.get_humidity() > self.max_humidity:
+                self.payload.secure_sleep(1)
+            self.active = True
+        self.payload.status.info("humidity levels acceptable")
+
+
     def start_testing(self, start_wait=True, end_wait=True, cleanup=True, first_valve=1, last_valve=3):
         """periodically actuate servos to open/close valves and log sensor data"""
         self.active = True
@@ -93,10 +106,11 @@ class Runner:
                 self.payload.secure_sleep(self.test_start_time)
             # open valves
             for pair_num in range(1, self.valve_num + 1):
+                self.humidity_check() # check for high humidity levels
                 # open valve a
                 self.payload.open_valve(("{num}a").format(num=pair_num))
-                self.payload.secure_sleep(self.intra_valve_time)
                 self.update_step(("just opened valve {num}a, waiting {gap_time}s before moving on").format(num=pair_num, gap_time=self.intra_valve_time))
+                self.payload.secure_sleep(self.intra_valve_time)
                 # open valve b
                 self.payload.open_valve(("{num}b").format(num=pair_num))
                 self.payload.secure_sleep(self.inter_valve_time)

@@ -44,12 +44,14 @@ class Payload:
         """get the sensed humidty from the humidity sensor and return the value"""
         hum = self.sensor.data.humidity
         self.data.debug(("humidity: {humidity} %RH").format(humidity=hum))
+        return hum
 
 
     def get_temperature(self):
         """get the sensed temperature  from the temperature sensor and return the value"""
         temp = self.sensor.data.temperature
         self.data.debug(("temperature: {temperature} C").format(temperature=temp))
+        return temp
 
 
     def open_valve(self, servo):

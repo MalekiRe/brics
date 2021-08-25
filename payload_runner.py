@@ -15,12 +15,13 @@ DEFAULT_END_WAIT = 3600 * 120 # s (120 hours)
 DEFAULT_SHORT_GAP = 10 # s
 DEFAULT_LONG_GAP = 3600 * 48 # s (48 hours)
 DEFAULT_VALVE_QUANTITY = 3 # valves
+DEFAULT_SENSOR_QUANTITY = 3 # sensors
 DEFAULT_VALVE_PORTS = [4, 17, 27, 22, 10, 9] # GPIO hardware port numbers
 MAX_HUMIDITY_LEVEL = 70 # %RH
 
 
 class Runner:
-    def __init__(self, sense_rep=DEFAULT_SENSOR_SPEED, test_start=DEFAULT_START_WAIT, test_end=DEFAULT_END_WAIT, intra=DEFAULT_SHORT_GAP, inter=DEFAULT_LONG_GAP, valve_quantity=DEFAULT_VALVE_QUANTITY, ports=DEFAULT_VALVE_PORTS, max_hum=MAX_HUMIDITY_LEVEL):
+    def __init__(self, sense_rep=DEFAULT_SENSOR_SPEED, test_start=DEFAULT_START_WAIT, test_end=DEFAULT_END_WAIT, intra=DEFAULT_SHORT_GAP, inter=DEFAULT_LONG_GAP, valve_quantity=DEFAULT_VALVE_QUANTITY, ports=DEFAULT_VALVE_PORTS, max_hum=MAX_HUMIDITY_LEVEL, sensors=DEFAULT_SENSOR_QUANTITY):
         """configure with default or user specified timing and hardware configuration"""
         self.sense_report_time = sense_rep
         self.test_start_time = test_start
@@ -29,7 +30,7 @@ class Runner:
         self.inter_valve_time = inter
         self.valve_num = valve_quantity
         self.max_humidity = max_hum
-        self.payload = Payload(sense_rep, list(ports))
+        self.payload = Payload(sense_rep, list(ports), sensors)
         self.active = False
         self.valves_configured = False
         self.current_step = "initialized"
@@ -79,7 +80,8 @@ class Runner:
 
     def humidity_check(self):
         """check for humidity and wait for it to drop if it is too high"""
-        if self.payload.get_humidity() > self.max_humidity:
+        humidity = self.payload.get_humidity()
+        if humidity == None or humidity > self.max_humidity:
             self.active = False
             self.update_step(("waiting for humidity levels to drop. Threshold: {thresh}, Current: {curr}").format(thresh=self.max_humidity, curr=self.payload.get_humidity()))
             while self.payload.get_humidity() > self.max_humidity:

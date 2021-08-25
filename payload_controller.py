@@ -4,6 +4,7 @@ Written by: Leo Glikbarg
 
 This file contains the Payload class. Payload is a controller for configuring and interacting with the hardware.
 """
+from datetime import datetime
 import time
 import logging
 import threading
@@ -11,19 +12,25 @@ import sys
 import os
 import RPi.GPIO as GPIO
 import bme680
+import smbus
+
+MULTIPLEXER_I2C_ADDR = 0x70 # this is defined by hardware for TCA9548As
+MULTIPLEXER_CHANNEL_ARRAY = [0b00000001,0b00000010,0b00000100,0b00001000,0b00010000,0b00100000,0b01000000,0b10000000]
 
 class Payload:
-    def __init__(self, sensor_speed, ports):
+    def __init__(self, sensor_speed, ports, sensor_num):
         """initializes class fields and begins logging"""
         self.active = False # sensor thread control flag
         self.servo_ports = ports # servo gpio hardware ports
         self.servos = {}
+        self.sensor_count = sensor_num
 
         # setup loggers and data collection
-        self.status = self.configure_logger("status", ("{time}_status.log").format(time = str(time.time())))
-        self.data = self.configure_logger("data", ("{time}_data.log").format(time = str(time.time())))
+        self.status = self.configure_logger("status", ("{time}_status.log").format(time = str(datetime.now())))
+        self.data = self.configure_logger("data", ("{time}_data.log").format(time = str(datetime.now())))
         self.status.info("loggers configured")
-        self.sensor = ''
+        self.bus = "" # I2C adress bus that sensor are located on
+        self.sensors = []
         self.sense_thread = threading.Thread(target=self.log_sense, args=(sensor_speed,))
         self.sense_thread.start()
 
@@ -40,18 +47,28 @@ class Payload:
             gap_time = time.time() - start
 
 
-    def get_humidity(self):
+    def get_humidity(self, device="unknown"):
         """get the sensed humidty from the humidity sensor and return the value"""
-        hum = self.sensor.data.humidity
-        self.data.debug(("humidity: {humidity} %RH").format(humidity=hum))
-        return hum
+        try:
+            self.sensor.get_sensor_data()
+            hum = self.sensor.data.humidity
+            self.data.debug(("sensor {sense_num} humidity: {humidity} %RH").format(sense_num=device, humidity=hum))
+            return hum
+        except:
+            self.data.debug(("sensor {sense_num} humidity: ERROR %RH").format(sense_num=device))
+            return None
 
 
-    def get_temperature(self):
+    def get_temperature(self, device="unknown"):
         """get the sensed temperature  from the temperature sensor and return the value"""
-        temp = self.sensor.data.temperature
-        self.data.debug(("temperature: {temperature} C").format(temperature=temp))
-        return temp
+        try:
+            self.sensor.get_sensor_data()
+            temp = self.sensor.data.temperature
+            self.data.debug(("sensor {sense_num} temperature: {temperature} C").format(sense_num=device, temperature=temp))
+            return temp
+        except:
+            self.data.debug(("sensor {sense_num} temperature: ERROR C").format(sense_num=device))
+            return None
 
 
     def open_valve(self, servo):
@@ -82,18 +99,26 @@ class Payload:
         consoleHandler = logging.StreamHandler()
         fileHandler.setFormatter(logFormatter)
         consoleHandler.setFormatter(logFormatter)
+        fileHandler.setLevel(logging.DEBUG)
+        consoleHandler.setLevel(logging.INFO)
         # create a logger, add handlers/formatters
         logger = logging.getLogger(logger_name)
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.DEBUG)
         logger.addHandler(fileHandler)
         logger.addHandler(consoleHandler)
         return logger
+
+
+    def change_multiplexer_channel(self, channel):
+        """change which channel is active on the i2c multiplexer"""
+        self.bus.write_byte(MULTIPLEXER_I2C_ADDR, MULTIPLEXER_CHANNEL_ARRAY[channel]) # 0x70 is defined by hardware to be the multiplexer's I2C adress
 
 
     def log_sense(self, wait):
         """Log the temp and humidity sense data to a file every {wait}s"""
         self.status.info("sensor data collection started")
         self.active = True
+        self.bus = smbus.SMBus(1)
         # configure sensor
         try:
             self.sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
@@ -106,9 +131,11 @@ class Payload:
         self.sensor.set_filter(bme680.FILTER_SIZE_3)
         while self.active:
             # if there is new data, get it
-            if self.sensor.get_sensor_data():
-                self.get_humidity()
-                self.get_temperature()
+            for device in range(self.sensor_count):
+                self.change_multiplexer_channel(device)
+                self.secure_sleep(0.1)
+                self.get_humidity(device)
+                self.get_temperature(device)
             self.secure_sleep(wait)
         self.status.info("sensor data collection ended")
 

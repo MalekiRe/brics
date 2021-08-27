@@ -47,11 +47,11 @@ class Payload:
             gap_time = time.time() - start
 
 
-    def get_humidity(self, device="unknown"):
+    def get_humidity(self, device):
         """get the sensed humidty from the humidity sensor and return the value"""
         try:
-            self.sensor.get_sensor_data()
-            hum = self.sensor.data.humidity
+            self.sensors[device].get_sensor_data()
+            hum = self.sensors[device].data.humidity
             self.data.debug(("sensor {sense_num} humidity: {humidity} %RH").format(sense_num=device, humidity=hum))
             return hum
         except:
@@ -59,11 +59,11 @@ class Payload:
             return None
 
 
-    def get_temperature(self, device="unknown"):
+    def get_temperature(self, device):
         """get the sensed temperature  from the temperature sensor and return the value"""
         try:
-            self.sensor.get_sensor_data()
-            temp = self.sensor.data.temperature
+            self.sensors[device].get_sensor_data()
+            temp = self.sensors[device].data.temperature
             self.data.debug(("sensor {sense_num} temperature: {temperature} C").format(sense_num=device, temperature=temp))
             return temp
         except:
@@ -119,17 +119,20 @@ class Payload:
         self.status.info("sensor data collection started")
         self.active = True
         self.bus = smbus.SMBus(1)
-        self.change_multiplexer_channel(0)
-        # configure sensor
-        try:
-            self.sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
-        except (RuntimeError, IOError):
-            self.sensor = bme680.BME680(bme680.I2C_ADDR_SECONDARY)
-        # oversampling settings that trade noise vs accuracy
-        self.sensor.set_humidity_oversample(bme680.OS_2X)
-        self.sensor.set_pressure_oversample(bme680.OS_4X)
-        self.sensor.set_temperature_oversample(bme680.OS_8X)
-        self.sensor.set_filter(bme680.FILTER_SIZE_3)
+        for device in range(self.sensor_count):
+            sensor = ''
+            self.change_multiplexer_channel(device)
+            # configure sensor
+            try:
+                sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
+            except (RuntimeError, IOError):
+                sensor = bme680.BME680(bme680.I2C_ADDR_SECONDARY)
+            # oversampling settings that trade noise vs accuracy
+            sensor.set_humidity_oversample(bme680.OS_2X)
+            sensor.set_pressure_oversample(bme680.OS_4X)
+            sensor.set_temperature_oversample(bme680.OS_8X)
+            sensor.set_filter(bme680.FILTER_SIZE_3)
+            self.sensors.append(sensor)
         while self.active:
             # if there is new data, get it
             for device in range(self.sensor_count):

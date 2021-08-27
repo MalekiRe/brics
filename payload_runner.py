@@ -51,10 +51,10 @@ class Runner:
         self.payload.status.info(("STATUS: servos_active:{running}, sensors_active:{sense}, current_step:{step}").format(running=str(self.active), sense=str(self.payload.active), step=self.current_step))
 
 
-    def get_sensor_data(self):
+    def get_sensor_data(self, valve):
         """reports current humidity and temperature values"""
-        self.payload.get_humidity()
-        self.payload.get_temperature()
+        self.payload.get_humidity(valve)
+        self.payload.get_temperature(valve)
 
 
     def update_step(self, state):
@@ -78,13 +78,13 @@ class Runner:
         self.payload.sense_thread.join()
 
 
-    def humidity_check(self):
+    def humidity_check(self, valve):
         """check for humidity and wait for it to drop if it is too high"""
-        humidity = self.payload.get_humidity()
+        humidity = self.payload.get_humidity(valve)
         if humidity == None or humidity > self.max_humidity:
             self.active = False
-            self.update_step(("waiting for humidity levels to drop. Threshold: {thresh}, Current: {curr}").format(thresh=self.max_humidity, curr=self.payload.get_humidity()))
-            while self.payload.get_humidity() > self.max_humidity:
+            self.update_step(("waiting for humidity levels to drop. Threshold: {thresh}, Current: {curr}").format(thresh=self.max_humidity, curr=self.payload.get_humidity(valve)))
+            while self.payload.get_humidity(valve) > self.max_humidity:
                 self.payload.secure_sleep(1)
             self.active = True
         self.payload.status.info("humidity levels acceptable")
@@ -108,7 +108,7 @@ class Runner:
                 self.payload.secure_sleep(self.test_start_time)
             # open valves
             for pair_num in range(1, self.valve_num + 1):
-                self.humidity_check() # check for high humidity levels
+                self.humidity_check(pair_num - 1) # check for high humidity levels
                 # open valve a
                 self.payload.open_valve(("{num}a").format(num=pair_num))
                 self.update_step(("just opened valve {num}a, waiting {gap_time}s before moving on").format(num=pair_num, gap_time=self.intra_valve_time))

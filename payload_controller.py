@@ -119,6 +119,7 @@ class Payload:
         self.status.info("sensor data collection started")
         self.active = True
         self.bus = smbus.SMBus(1)
+        self.change_multiplexer_channel(0)
         # configure sensor
         try:
             self.sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)

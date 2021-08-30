@@ -124,15 +124,18 @@ class Payload:
             self.change_multiplexer_channel(device)
             # configure sensor
             try:
-                sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
-            except (RuntimeError, IOError):
-                sensor = bme680.BME680(bme680.I2C_ADDR_SECONDARY)
-            # oversampling settings that trade noise vs accuracy
-            sensor.set_humidity_oversample(bme680.OS_2X)
-            sensor.set_pressure_oversample(bme680.OS_4X)
-            sensor.set_temperature_oversample(bme680.OS_8X)
-            sensor.set_filter(bme680.FILTER_SIZE_3)
-            self.sensors.append(sensor)
+                try:
+                    sensor = bme680.BME680(bme680.I2C_ADDR_PRIMARY)
+                except (RuntimeError, IOError):
+                    sensor = bme680.BME680(bme680.I2C_ADDR_SECONDARY)
+                # oversampling settings that trade noise vs accuracy
+                sensor.set_humidity_oversample(bme680.OS_2X)
+                sensor.set_pressure_oversample(bme680.OS_4X)
+                sensor.set_temperature_oversample(bme680.OS_8X)
+                sensor.set_filter(bme680.FILTER_SIZE_3)
+                self.sensors.append(sensor)
+            except:
+                self.sensors.append("No sensor connected")
         while self.active:
             # if there is new data, get it
             for device in range(self.sensor_count):

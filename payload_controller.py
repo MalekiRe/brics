@@ -83,12 +83,13 @@ class Payload:
 
     def close_valve(self, servo):
         """actuate a servo to close a pinch valve"""
-        self.status.info(("attempting to close valve {valve_id}").format(valve_id=servo))
-        self.servos[servo]["instance"].ChangeDutyCycle(5.0) # valve closing
-        self.secure_sleep(2) # wait for valve to complete movement
-        self.servos[servo]["instance"].ChangeDutyCycle(0.0) # stop valve movement
-        self.secure_sleep(1.5) # wait for valve to fully stop
-        self.status.info(("valve {valve_id} closed").format(valve_id=servo))
+        
+        #self.status.info(("attempting to close valve {valve_id}").format(valve_id=servo))
+        #self.servos[servo]["instance"].ChangeDutyCycle(2.0) # valve closing
+        #self.secure_sleep(0.25) # wait for valve to complete movement
+        #self.servos[servo]["instance"].ChangeDutyCycle(0.0) # stop valve movement
+        #self.secure_sleep(1.5) # wait for valve to fully stop
+        #self.status.info(("valve {valve_id} closed").format(valve_id=servo))
 
 
     def configure_logger(self, logger_name, file_name):

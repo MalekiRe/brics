@@ -9,32 +9,39 @@ test procedures. The Payload class is used to interact with the hardware.
 from payload_controller import Payload
 
 # default timing constants and hardware configuration
+BASE_TIME_CONSTANT = 1 # (1 minute) 
+
 DEFAULT_SENSOR_SPEED = 1 # hz
-DEFAULT_START_WAIT = 3600 # s (1 hour)
-DEFAULT_END_WAIT = 3600 * 120 # s (120 hours)
+DEFAULT_START_WAIT = BASE_TIME_CONSTANT # s (1 hour)
+DEFAULT_END_WAIT = BASE_TIME_CONSTANT * 120 # s (120 hours)
 DEFAULT_SHORT_GAP = 10 # s
-DEFAULT_LONG_GAP = 3600 * 48 # s (48 hours)
+DEFAULT_LONG_GAP = BASE_TIME_CONSTANT * 48 # s (48 hours)
 DEFAULT_VALVE_QUANTITY = 3 # valves
 DEFAULT_SENSOR_QUANTITY = 3 # sensors
-DEFAULT_VALVE_PORTS = [4, 17, 27, 22, 10, 9] # GPIO hardware port numbers
+DEFAULT_VALVE_PORTS = [14, 15, 4, 23, 17, 27] # GPIO hardware port numbers
 MAX_HUMIDITY_LEVEL = 70 # %RH
 
 
 class Runner:
     def __init__(self, sense_rep=DEFAULT_SENSOR_SPEED, test_start=DEFAULT_START_WAIT, test_end=DEFAULT_END_WAIT, intra=DEFAULT_SHORT_GAP, inter=DEFAULT_LONG_GAP, valve_quantity=DEFAULT_VALVE_QUANTITY, ports=DEFAULT_VALVE_PORTS, max_hum=MAX_HUMIDITY_LEVEL, sensors=DEFAULT_SENSOR_QUANTITY):
         """configure with default or user specified timing and hardware configuration"""
+        print("SSSSSSSSSSSSSSSSSSSSSSSS")
         self.sense_report_time = sense_rep
         self.test_start_time = test_start
         self.test_end_time = test_end
         self.intra_valve_time = intra
         self.inter_valve_time = inter
-        self.valve_num = valve_quantity
+        #self.valve_num = valve_quantity
+        self.valve_num = DEFAULT_VALVE_QUANTITY
         self.max_humidity = max_hum
-        self.payload = Payload(sense_rep, list(ports), sensors)
+        print(type(ports))
+        #self.payload = Payload(sense_rep, list(ports), sensors)
+        self.payload = Payload(sense_rep, list(DEFAULT_VALVE_PORTS), sensors)
         self.active = False
         self.valves_configured = False
         self.current_step = "initialized"
-        self.payload.status.info(("payload initialized, sensors reporting at {speed}hz").format(speed=self.sense_report_time))
+        self.payload.status.info(("payload initialized"))
+            #sensors reporting at {speed}hz).format(speed=self.sense_report_time))
 
 
     def change_timing(self, timing):
@@ -53,8 +60,8 @@ class Runner:
 
     def get_sensor_data(self, valve):
         """reports current humidity and temperature values"""
-        self.payload.get_humidity(valve)
-        self.payload.get_temperature(valve)
+        #self.payload.get_humidity(valve)
+        #self.payload.get_temperature(valve)
 
 
     def update_step(self, state):
@@ -80,14 +87,14 @@ class Runner:
 
     def humidity_check(self, valve):
         """check for humidity and wait for it to drop if it is too high"""
-        humidity = self.payload.get_humidity(valve)
-        if humidity == None or humidity > self.max_humidity:
-            self.active = False
-            self.update_step(("waiting for humidity levels to drop. Threshold: {thresh}, Current: {curr}").format(thresh=self.max_humidity, curr=self.payload.get_humidity(valve)))
-            while self.payload.get_humidity(valve) > self.max_humidity:
-                self.payload.secure_sleep(1)
-            self.active = True
-        self.payload.status.info("humidity levels acceptable")
+        #humidity = self.payload.get_humidity(valve)
+        #if humidity == None or humidity > self.max_humidity:
+         #   self.active = False
+          #  self.update_step(("waiting for humidity levels to drop. Threshold: {thresh}, Current: {curr}").format(thresh=self.max_humidity, curr=self.payload.get_humidity(valve)))
+           # while self.payload.get_humidity(valve) > self.max_humidity:
+            #    self.payload.secure_sleep(1)
+            #self.active = True
+        #self.payload.status.info("humidity levels acceptable")
 
 
     def start_testing(self, start_wait=True, end_wait=True, cleanup=True, first_valve=1, last_valve=3):
@@ -108,7 +115,7 @@ class Runner:
                 self.payload.secure_sleep(self.test_start_time)
             # open valves
             for pair_num in range(1, self.valve_num + 1):
-                self.humidity_check(pair_num - 1) # check for high humidity levels
+                #self.humidity_check(pair_num - 1) # check for high humidity levels
                 # open valve a
                 self.payload.open_valve(("{num}a").format(num=pair_num))
                 self.update_step(("just opened valve {num}a, waiting {gap_time}s before moving on").format(num=pair_num, gap_time=self.intra_valve_time))

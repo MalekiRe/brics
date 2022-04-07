@@ -104,5 +104,4 @@ def get_data(sensor, bus):
 if __name__ == "__main__":
     """starts the run() method. Read the run() docstring for more information"""
     run()
-    lcd.close(clear=True)
     printinfo()

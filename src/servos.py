@@ -1,6 +1,7 @@
 from datetime import datetime
 import time
 import sys
+import os
 import RPi.GPIO as GPIO
 
 PORTS = [14, 15, 4, 23 ,17, 27]

@@ -95,7 +95,7 @@ def get_data(sensor, bus):
     for i in range(1):
         #change_multiplex_bus(bus, i)
         print("Getting info from sensor: " + str(i))
-        print('Temp: {} degrees C'.format(round(sensor.temperature, 3)))
+        print('Temp: {} C'.format(round(sensor.temperature, 3)))
         print('Gas: {} ohms'.format(round(sensor.gas, 3)))
         print('Humidity: {}%'.format(round(sensor.humidity, 3)))
         print('Pressure: {}hPa'.format(round(sensor.pressure, 3)))

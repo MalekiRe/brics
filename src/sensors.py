@@ -79,7 +79,7 @@ def run(log=True):
     time.sleep(0.5)
 
     print("Initializing sensors...")
-    sensor = adafruit_bme680.Adafruit_BME680_I2C(i2c)
+    sensor = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=119)
     time.sleep(5)
     print("Praying to a god of our choosing...")
 

@@ -11,6 +11,44 @@ import sys
 import smbus
 from datetime import datetime
 
+# Screencode libraries
+from RPLCD import i2c
+from time import sleep
+from collections import deque
+
+# Constants to initialise the LCD
+lcdmode = 'i2c'
+cols = 20
+rows = 4
+charmap = 'A00'
+i2c_expander = 'PCF8574'
+
+# Generally 27 is the address;Find yours using: i2cdetect -y 1 
+address = 0x27 
+port = 1 # 0 on an older Raspberry Pi
+
+# Initialise the LCD
+lcd = i2c.CharLCD(i2c_expander, address, port=port, charmap=charmap,
+                  cols=cols, rows=rows)
+
+# Switch on  backlight
+lcd.backlight_enabled = True
+
+# Returns the last n lines of a file
+def tail(filename, n):
+    with open(filename) as f:
+        return deque(f, n)
+
+endoffile = tail('../log/sensor.log',5)
+
+# Writes string onto screen
+def printinfo():
+    for i in endoffile:
+        if '-' in i:
+            continue
+        lcd.write_string(i)
+        lcd.crlf() 
+
 #TODO: change run frequency via crontab
 
 MULTIPLEXER_I2C_ADDR = 0x70
@@ -65,3 +103,4 @@ def get_data(sensor, bus):
 if __name__ == "__main__":
     """starts the run() method. Read the run() docstring for more information"""
     run()
+    printinfo()

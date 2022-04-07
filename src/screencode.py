@@ -15,7 +15,7 @@ address = 0x27
 port = 1 # 0 on an older Raspberry Pi
 
 # Switch off backlight
-lcd.backlight_enabled = False
+# lcd.backlight_enabled = False
 
 # Initialise the LCD
 lcd = i2c.CharLCD(i2c_expander, address, port=port, charmap=charmap,

@@ -26,8 +26,8 @@ def run(log=True):
     print()
 
     # log time
-    x = datetime.now()
-    print(x.strftime('%c'))
+    x = os.popen('uptime -p').read()[:-1]
+    print(x)
 
     # init I2C comms with BME680
     bus = smbus.SMBus(1)

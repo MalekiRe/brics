@@ -76,11 +76,11 @@ def run(log=True):
     time.sleep(0.5)
 
     print("Changing multiplexers...")
-    change_multiplex_bus(bus, 0)
+    change_multiplex_bus(bus, 1)
     time.sleep(0.5)
 
     print("Initializing sensors...")
-    sensor = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=119)
+    sensor = adafruit_bme680.Adafruit_BME680_I2C(i2c, address = 0x77)
     time.sleep(5)
     print("Praying to a god of our choosing...")
 
@@ -93,12 +93,12 @@ def change_multiplex_bus(bus, channel):
 def get_data(sensor, bus):
     """print all available data from the bme680"""
     for i in range(1):
-        change_multiplex_bus(bus, i)
+        #change_multiplex_bus(bus, i)
         print("Getting info from sensor: " + str(i))
-        print('Temperature: {} degrees C'.format(sensor.temperature))
-        print('Gas: {} ohms'.format(sensor.gas))
-        print('Humidity: {}%'.format(sensor.humidity))
-        print('Pressure: {}hPa'.format(sensor.pressure))
+        print('Temperature: {} degrees C'.format(round(sensor.temperature, 3)))
+        print('Gas: {} ohms'.format(round(sensor.gas, 3)))
+        print('Humidity: {}%'.format(round(sensor.humidity, 3)))
+        print('Pressure: {}hPa'.format(round(sensor.pressure, 3)))
         print("-"*8)
    
 if __name__ == "__main__":

@@ -31,11 +31,14 @@ def configure_servos(num_valves):
             servo.start(0)
 
             servos[name] = {"channel": channel, "instance": servo}
-            close_valve(name)
+            #close_valve(name)
 
 def open_valve(name):
-    x = datetime.now()
+    x = os.popen('uptime -p').read()[:-1]
+    f = open(LOGFILE, 'a')
+    sys.stdout = f
     print("TIME:{}  ACTION: Opening servo {}".format(x.strftime('%c'), name))
+    f.close()
     set_valve(name, 9.5, 0.0)
 
 def close_valve(name):
@@ -51,9 +54,9 @@ def set_valve(name, moveVal, stopVal):
 
 
 if __name__ == "__main__":
-    f = open(LOGFILE, 'a')
-    sys.stdout = f
-
+    #f = open(LOGFILE, 'a')
+    #sys.stdout = f
+    
     configure_servos(NUM_VALVES)
     time.sleep(EXP_WAIT_TIME)
     for i in range(NUM_VALVES):

@@ -48,6 +48,7 @@ def printinfo():
         if '-' in i:
             continue
         lcd.write_string(i)
+        lcd.crlf()
 
 #TODO: change run frequency via crontab
 
@@ -96,8 +97,8 @@ def get_data(sensor, bus):
         print("Getting info from sensor: " + str(i))
         print('Temp: {} C'.format(round(sensor.temperature, 3)))
         print('Gas: {} ohms'.format(round(sensor.gas, 3)))
-        print('Humidity: {}%'.format(round(sensor.humidity, 3)))
-        print('Pressure: {}hPa'.format(round(sensor.pressure, 3)))
+        print('Hum: {}%'.format(round(sensor.humidity, 3)))
+        print('Press: {}hPa'.format(round(sensor.pressure, 3)))
         print("-"*8)
    
 if __name__ == "__main__":

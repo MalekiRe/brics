@@ -48,7 +48,6 @@ def printinfo():
         if '-' in i:
             continue
         lcd.write_string(i)
-        lcd.crlf() 
 
 #TODO: change run frequency via crontab
 

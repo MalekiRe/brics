@@ -9,6 +9,7 @@ import adafruit_bme680
 import time
 import sys
 import smbus
+import os
 from datetime import datetime
 
 # Screencode libraries

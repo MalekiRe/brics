@@ -34,8 +34,6 @@ def printinfo():
         if '-' in i:
             continue
         lcd.write_string(i)
-        lcd.crlf()
-    sleep(5) 
+        lcd.cr()
 
-while True:
-    printinfo()
+printinfo()

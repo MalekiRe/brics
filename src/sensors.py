@@ -40,7 +40,7 @@ def tail(filename, n):
     with open(filename) as f:
         return deque(f, n)
 
-endoffile = tail('../log/sensor.log',5)
+endoffile = tail('/home/pi/brics/log/sensor.log',5)
 
 # Writes string onto screen
 def printinfo():

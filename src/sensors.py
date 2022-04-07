@@ -91,7 +91,7 @@ def change_multiplex_bus(bus, channel):
 
 def get_data(sensor, bus):
     """print all available data from the bme680"""
-    for i in range(3):
+    for i in range(1):
         change_multiplex_bus(bus, i)
         print("Getting info from sensor: " + str(i))
         print('Temperature: {} degrees C'.format(sensor.temperature))
